@@ -1,8 +1,8 @@
-import torch
+from torch import nn
 from typing import Tuple, List
 
 
-class BasicModel(torch.nn.Module):
+class BasicModel(nn.Module):
     """
     This is a basic backbone for SSD.
     The feature extractor outputs a list of 6 feature maps, with the sizes:
@@ -12,6 +12,14 @@ class BasicModel(torch.nn.Module):
      shape(-1, output_channels[3], 5, 5),
      shape(-1, output_channels[3], 3, 3),
      shape(-1, output_channels[4], 1, 1)]
+
+    NEW
+    [shape(-1, output_channels[0], 32, 256),
+     shape(-1, output_channels[1], 16, 128),
+     shape(-1, output_channels[2], 8, 64),
+     shape(-1, output_channels[3], 4, 32),
+     shape(-1, output_channels[3], 2, 16),
+     shape(-1, output_channels[4], 1, 8)]
     """
     def __init__(self,
             output_channels: List[int],
@@ -186,6 +194,10 @@ class BasicModel(torch.nn.Module):
             shape(-1, output_channels[0], 38, 38),
         """
         out_features = []
+        for module in self.children():
+            x = module(x)
+            out_features.append(x)
+
         for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
             h, w = self.output_feature_shape[idx]
