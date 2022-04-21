@@ -83,7 +83,7 @@ class SSD300(nn.Module):
             predictions.append((boxes, categories, scores))
         return predictions
 
- 
+
 def filter_predictions(
         boxes_ltrb: torch.Tensor, confs: torch.Tensor,
         nms_iou_threshold: float, max_output: int, score_threshold: float):
