@@ -174,7 +174,7 @@ img_size   128, 1024                                               300,300
                 in_channels=128,
                 out_channels= output_channels[5],
                 kernel_size=2,
-                stride=1,
+                stride=2,
                 padding=0
             )
         )
@@ -198,6 +198,7 @@ img_size   128, 1024                                               300,300
         out_features = []
         for module in self.children():
             x = module(x)
+            print(x.size())
             out_features.append(x)
 
         for idx, feature in enumerate(out_features):
