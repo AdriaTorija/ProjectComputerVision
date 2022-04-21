@@ -13,13 +13,15 @@ class BasicModel(nn.Module):
      shape(-1, output_channels[3], 3, 3),
      shape(-1, output_channels[4], 1, 1)]
 
-    NEW
-    [shape(-1, output_channels[0], 32, 256),
-     shape(-1, output_channels[1], 16, 128),
-     shape(-1, output_channels[2], 8, 64),
-     shape(-1, output_channels[3], 4, 32),
-     shape(-1, output_channels[3], 2, 16),
-     shape(-1, output_channels[4], 1, 8)]
+
+img_size   128, 1024                                               300,300      
+    NEW                                                     OLD
+    [shape(-1, output_channels[0], 32, 256),                38, 38)
+     shape(-1, output_channels[1], 16, 128),                19, 19),
+     shape(-1, output_channels[2], 8, 64),                  10, 10),            
+     shape(-1, output_channels[3], 4, 32),                  5, 5)
+     shape(-1, output_channels[3], 2, 16),                  3, 3)
+     shape(-1, output_channels[4], 1, 8)]                   1, 1)
     """
     def __init__(self,
             output_channels: List[int],
