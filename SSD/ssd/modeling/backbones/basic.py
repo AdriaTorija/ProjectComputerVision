@@ -198,7 +198,6 @@ img_size   128, 1024                                               300,300
         out_features = []
         for module in self.children():
             x = module(x)
-            print(x.size())
             out_features.append(x)
 
         for idx, feature in enumerate(out_features):
