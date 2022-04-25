@@ -48,7 +48,6 @@ img_size   128, 1024                                               300,300
             nn.Conv2d(128, 128, kernel_size=3, padding=1),#sol
             nn.BatchNorm2d(128),#sol
             nn.LeakyReLU(0.2),#sol
-            nn.MaxPool2d(2,2), # 32 x 256 out#sol
             nn.Conv2d(128, 256, kernel_size=3, padding=1),#sol
             nn.BatchNorm2d(256),#sol
             nn.LeakyReLU(0.2),#sol
@@ -56,7 +55,7 @@ img_size   128, 1024                                               300,300
             nn.BatchNorm2d(512),#sol
             nn.LeakyReLU(0.2),#sol
             #Ouput 32#
-            nn.Conv2d(512, output_channels[0], kernel_size=3, padding=1),#so    
+            nn.Conv2d(512, output_channels[0], kernel_size=3, padding=1,stride=2),#so    
         ) #sol
         
         self.additional_layers = nn.ModuleList([#sol
