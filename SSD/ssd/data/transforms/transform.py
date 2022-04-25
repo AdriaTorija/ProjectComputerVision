@@ -201,7 +201,7 @@ class GaussianBlur(torch.nn.Module):
 
     @torch.no_grad()
     def forward(self, sample):
-        transform = torchvision.transforms.functional.GaussianBlur(self.k, self.s)
+        transform = torchvision.transforms.GaussianBlur(self.k, self.s)
         sample["image"] = transform(sample["image"])
         return sample
 
@@ -223,7 +223,7 @@ class ColorJitter(torch.nn.Module):
         self.p = p
     @torch.no_grad()
     def forward(self, sample):
-        transform = torchvision.transforms.functional.ColorJitter(
+        transform = torchvision.transforms.ColorJitter(
             brightness=self.brightness, 
             contrast=self.contrast, 
             saturation=self.saturation, 
