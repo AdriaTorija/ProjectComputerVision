@@ -193,15 +193,17 @@ class GaussianBlur(torch.nn.Module):
     def __init__(
         self,
         k=(3,3), 
-        s=(0.1, 1)
+        s=(0.1, 1),
     ) -> None:
         super().__init__()
         self.v = k
         self.s = s
-
     @torch.no_grad()
     def forward(self, sample):
-        transform = torchvision.transforms.GaussianBlur(self.k, self.s)
+        transform = torchvision.transforms.functional.GaussianBlur(
+            self.k,
+            self.s
+        )
         sample["image"] = transform(sample["image"])
         return sample
 
@@ -231,3 +233,18 @@ class ColorJitter(torch.nn.Module):
         )
         sample["image"] = transform(sample["image"])
         return sample
+
+class RandomAdjustSharpness(torch.nn.Module):
+    def __init__(
+        self,
+        sharpness_factor = 2
+    ) -> None:
+        super().__init__()
+        self.sharpness_factor = sharpness_factor
+    @torch.no_grad()
+    def forward(self, batch):
+        transform = torchvision.transforms.RandomAdjustSharpness(
+            sharpness_factor=self.sharpness_factor, 
+        )
+        batch["image"] = transform(batch["image"])
+        return batch
