@@ -18,6 +18,8 @@ train_cpu_transform = L(torchvision.transforms.Compose)(transforms=[
     #L(RandomSampleCrop)(),
     L(ToTensor)(),
     #L(RandomHorizontalFlip)(),
+    #L(ColorJitter)(),
+    L(GaussianBlur)(),
     L(Resize)(imshape="${train.imshape}"),
     L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
 ])

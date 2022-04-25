@@ -186,3 +186,48 @@ class Resize(torch.nn.Module):
     def forward(self, batch):
         batch["image"] = torchvision.transforms.functional.resize(batch["image"], self.imshape, antialias=True)
         return batch
+
+
+class GaussianBlur(torch.nn.Module):
+
+    def __init__(
+        self,
+        k=(3,3), 
+        s=(0.1, 1)
+    ) -> None:
+        super().__init__()
+        self.v = k
+        self.s = s
+
+    @torch.no_grad()
+    def forward(self, sample):
+        transform = torchvision.transforms.functional.GaussianBlur(self.k, self.s)
+        sample["image"] = transform(sample["image"])
+        return sample
+
+class ColorJitter(torch.nn.Module):
+
+    def __init__(
+        self,
+        contrast = (1),
+        saturation = (0.5, 1.5),
+        hue = (-0.05, 0.05),
+        brightness = (0.875, 1.125),
+        p: float = 0.5,
+    ) -> None:
+        super().__init__()
+        self._brightness = brightness
+        self._contrast = contrast
+        self._hue = hue
+        self._saturation = saturation
+        self.p = p
+    @torch.no_grad()
+    def forward(self, sample):
+        transform = torchvision.transforms.functional.ColorJitter(
+            brightness=self.brightness, 
+            contrast=self.contrast, 
+            saturation=self.saturation, 
+            hue=self.hue
+        )
+        sample["image"] = transform(sample["image"])
+        return sample
