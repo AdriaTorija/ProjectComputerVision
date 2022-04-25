@@ -27,160 +27,82 @@ img_size   128, 1024                                               300,300
             output_channels: List[int],
             image_channels: int,
             output_feature_sizes: List[Tuple[int]]):
+        
         super().__init__()
         self.out_channels = output_channels
         self.output_feature_shape = output_feature_sizes
         
-        
         #Define the backbone
-        module1 = nn.Sequential(
-            nn.Conv2d(
-                in_channels=image_channels,
-                out_channels=32,
-                kernel_size=3,
-                stride=1,
-                padding=1
-            ),
-            nn.MaxPool2d(
-                kernel_size=2, 
-                stride=2
-            ),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=32,
-                out_channels=64,
-                kernel_size=3,
-                stride=1,
-                padding=1
-            ),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=64,
-                out_channels=64,
-                kernel_size=3,
-                stride=1,
-                padding=1
-            ),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=64,
-                out_channels= output_channels[0],
-                kernel_size=3,
-                stride=2,
-                padding=1
-            ),
-        )
-        self.add_module("module1", module1)
+        self.feature_extractor = nn.Sequential(#sol
+            nn.Conv2d(image_channels, 32, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(32),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(64),#sol
+            nn.LeakyReLU(0.2),#sol
+            #sol
+            nn.MaxPool2d(2,2), # 64x512 out#sol
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(128),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(128),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.MaxPool2d(2,2), # 32 x 256 out#sol
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(256),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(512),#sol
+            nn.LeakyReLU(0.2),#sol
+            #Ouput 32#
+            nn.Conv2d(512, output_channels[0], kernel_size=3, padding=1),#so    
+        ) #sol
         
-        module2 = nn.Sequential(
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=output_channels[0],
-                out_channels=128,
-                kernel_size=3,
-                stride=1,
-                padding=1
-            ),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=128,
-                out_channels= output_channels[1],
-                kernel_size=3,
-                stride=2,
-                padding=1
-            )
-        )
-        self.add_module("module2", module2)
-        
-        module3 = nn.Sequential(
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels= output_channels[1],
-                out_channels=256,
-                kernel_size=3,
-                stride=1,
-                padding=1
-            ),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=256,
-                out_channels= output_channels[2],
-                kernel_size=3,
-                stride=2,
-                padding=1
-            )
-        )
-        self.add_module("module3", module3)
-        
-        module4 = nn.Sequential(
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels= output_channels[2],
-                out_channels=128,
-                kernel_size=3,
-                stride=1,
-                padding=1
-            ),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=128,
-                out_channels= output_channels[3],
-                kernel_size=3,
-                stride=2,
-                padding=1
-            )
-        )
-        self.add_module("module4", module4)
-        
-        module5 = nn.Sequential(
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels= output_channels[3],
-                out_channels=128,
-                kernel_size=3,
-                stride=1,
-                padding=1
-            ),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=128,
-                out_channels= output_channels[4],
-                kernel_size=3,
-                stride=2,
-                padding=1
-            )
-        )
-        self.add_module("module5", module5)
-        
-        module6 = nn.Sequential(
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels= output_channels[4],
-                out_channels=128,
-                kernel_size=2,
-                stride=1,
-                padding=1
-            ),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.Conv2d(
-                in_channels=128,
-                out_channels= output_channels[5],
-                kernel_size=2,
-                stride=2,
-                padding=0
-            )
-        )
-        self.add_module("module6", module6)
-        
-  
+        self.additional_layers = nn.ModuleList([#sol
+            nn.Sequential( # 16 x 128 out#sol
+                nn.BatchNorm2d(output_channels[0]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[0], 512, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(512),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(512, output_channels[1], kernel_size=3, padding=1, stride=2),#sol
+            ),#sol
+            nn.Sequential( # 8x64 out#sol
+                nn.BatchNorm2d(output_channels[1]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[1], 256, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(256),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(256, output_channels[2], kernel_size=3, padding=1, stride=2),#sol
+            ),#sol
+            nn.Sequential( # 4 x 32 out#sol
+                nn.BatchNorm2d(output_channels[2]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[2], 128, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(128),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(128, output_channels[3], kernel_size=3, padding=1, stride=2),#sol
+            ),#sol
+            nn.Sequential( # 2 x 16 out#sol
+                nn.BatchNorm2d(output_channels[3]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[3], 128, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(128),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(128, output_channels[4], kernel_size=3, stride=2, padding=1),#sol
+            ),#sol
+            nn.Sequential( # 1 x 8 out#sol
+                nn.BatchNorm2d(output_channels[4]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[4], 128, kernel_size=2, padding=1),#sol
+                nn.BatchNorm2d(128),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(128, output_channels[5], kernel_size=2,stride=2),#sol
+            ),#sol
+            
+        ])#sol
+
 
     def forward(self, x):
         """
@@ -196,10 +118,13 @@ img_size   128, 1024                                               300,300
             shape(-1, output_channels[0], 38, 38),
         """
         out_features = []
-        for module in self.children():
-            x = module(x)
-            out_features.append(x)
-
+        x = self.feature_extractor(x)#sol
+        out_features.append(x)#sol
+        
+        for additional_layer in self.additional_layers.children():#sol
+            x = additional_layer(x)#sol
+            out_features.append(x)#sol
+            
         for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
             h, w = self.output_feature_shape[idx]
