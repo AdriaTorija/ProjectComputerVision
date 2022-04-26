@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import torchvision
 import torch
 import numpy as np
@@ -188,7 +189,13 @@ class Resize(torch.nn.Module):
         return batch
 
 
-class GaussianBlur(torch.nn.Module):
+# +
+class ColorJitter(torch.nn.Module):
+
+    
+# -
+
+class Gaussian(torch.nn.Module):
 
     def __init__(
         self,
@@ -205,22 +212,23 @@ class GaussianBlur(torch.nn.Module):
         sample["image"] = transform(sample["image"])
         return sample
 
-class ColorJitter(torch.nn.Module):
 
+class Gaussiano(torch.nn.Module):
     def __init__(
-        self,
-        contrast = (1),
-        saturation = (0.5, 1.5),
-        hue = (-0.05, 0.05),
-        brightness = (0.875, 1.125),
-        p: float = 0.5,
-    ) -> None:
-        super().__init__()
-        self._brightness = brightness
-        self._contrast = contrast
-        self._hue = hue
-        self._saturation = saturation
-        self.p = p
+            self,
+            contrast = (1),
+            saturation = (0.5, 1.5),
+            hue = (-0.05, 0.05),
+            brightness = (0.875, 1.125),
+            p: float = 0.5,
+        ) -> None:
+            super().__init__()
+            self._brightness = brightness
+            self._contrast = contrast
+            self._hue = hue
+            self._saturation = saturation
+            self.p = p
+
     @torch.no_grad()
     def forward(self, sample):
         transform = torchvision.transforms.ColorJitter(
@@ -231,3 +239,5 @@ class ColorJitter(torch.nn.Module):
         )
         sample["image"] = transform(sample["image"])
         return sample
+
+
