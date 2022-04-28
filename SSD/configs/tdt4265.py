@@ -18,7 +18,7 @@ train_cpu_transform = L(torchvision.transforms.Compose)(transforms=[
     L(RandomSampleCrop)(),
     L(ToTensor)(),
     L(ColorJitter)(),
-    L(GaussianBlur)(),
+    #L(GaussianBlur)(),
     L(RandomAdjustSharpness)(),
     L(RandomHorizontalFlip)(),
     L(Resize)(imshape="${train.imshape}"),

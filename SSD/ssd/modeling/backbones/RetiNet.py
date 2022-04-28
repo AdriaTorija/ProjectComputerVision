@@ -36,7 +36,7 @@ class FPNResNets(nn.Module):
         self.smooth_layer3 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=1)
 		# add downsample layer
         self.downsample_layer = nn.MaxPool2d(kernel_size=1, stride=2)
-
+        ''' 
         self.additional_layers = nn.ModuleList([#sol
             nn.Sequential( # 16 x 128 out#sol
                 nn.BatchNorm2d(output_channels[0]),#sol
@@ -80,6 +80,7 @@ class FPNResNets(nn.Module):
             ),#sol
             
         ])#sol
+        '''
         '''forward'''
     def forward(self, x):
 		# bottom-up
@@ -102,20 +103,31 @@ class FPNResNets(nn.Module):
 		# return all feature pyramid levels
         
         out_features = []
-        out_features.append(c5)
-
-        print(np.shape(c5))
-        '''out_features.append(p5)
-        out_features.append(p4)
+        out_features.append(p2)
         out_features.append(p3)
-        out_features.append(p2)'''
-
-        for additional_layer in self.additional_layers.children():#sol
-            x = additional_layer(c5)#sol
-            out_features.append(x)#sol
-
+        out_features.append(p4)
+        out_features.append(p5)
+        out_features.append(p6)
+      
+        
+        
+        
+        
+        
         for out in out_features:
             print(np.shape(out))
+        print("GOOD FEATURES \n")
+        
+        for idx, feature in enumerate(out_features):
+            out_channel = self.out_channels[idx]
+            h, w = self.output_feature_shape[idx]
+            expected_shape = (out_channel, h, w)
+            print(expected_shape)
+            
+        #for additional_layer in self.additional_layers.children():#sol
+        #    x = additional_layer(c5)#sol
+        #   out_features.append(x)#sol
+
 
         for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]

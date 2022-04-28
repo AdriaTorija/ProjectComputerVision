@@ -1,5 +1,6 @@
 from torch import nn
 from typing import Tuple, List
+import numpy as np
 
 
 class BasicModel(nn.Module):
@@ -123,6 +124,10 @@ img_size   128, 1024                                               300,300
         for additional_layer in self.additional_layers.children():#sol
             x = additional_layer(x)#sol
             out_features.append(x)#sol
+        
+        for out in out_features:
+            print(np.shape(out))
+            
             
         for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
