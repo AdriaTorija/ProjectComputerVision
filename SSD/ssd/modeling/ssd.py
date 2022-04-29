@@ -23,9 +23,14 @@ class SSD300(nn.Module):
         self.classification_heads = []
 
         # Initialize output heads that are applied to each feature map from the backbone.
+        aux=0
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
-            self.regression_heads.append(nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1))
-            self.classification_heads.append(nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1))
+            if aux==0 :
+                r1=nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1)
+                r2=nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1)
+            self.regression_heads.append(r1)
+            self.classification_heads.append(r2)
+            
 
         self.regression_heads = nn.ModuleList(self.regression_heads)
         self.classification_heads = nn.ModuleList(self.classification_heads)
@@ -108,3 +113,4 @@ def filter_predictions(
         # 3. Only keep max_output best boxes (NMS returns indices in sorted order, decreasing w.r.t. scores)
         keep_idx = keep_idx[:max_output]
         return boxes_ltrb[keep_idx], category[keep_idx], scores[keep_idx]
+
