@@ -1,32 +1,52 @@
-'''
-Function:
-	Feature Pyramid Network of ResNets
-Author:
-	Charles
-'''
 from torch import nn
 import torchvision
 import torch.nn.functional as F
 from typing import Tuple, List
 import numpy as np
 
-'''FPN by using ResNets'''
+
 class FPNResNets(nn.Module):
-    def __init__(self,output_channels: List[int],image_channels: int,output_feature_sizes: List[Tuple[int]]):
-        super().__init__()
+    """
+    This is a basic backbone for SSD.
+    The feature extractor outputs a list of 6 feature maps, with the sizes:
+    [shape(-1, output_channels[0], 38, 38),
+     shape(-1, output_channels[1], 19, 19),
+     shape(-1, output_channels[2], 10, 10),
+     shape(-1, output_channels[3], 5, 5),
+     shape(-1, output_channels[3], 3, 3),
+     shape(-1, output_channels[4], 1, 1)]
+
+
+img_size   128, 1024                                               300,300      
+    NEW                                                     OLD
+    [shape(-1, output_channels[0], 32, 256),                38, 38)
+     shape(-1, output_channels[1], 16, 128),                19, 19),
+     shape(-1, output_channels[2], 8, 64),                  10, 10),            
+     shape(-1, output_channels[3], 4, 32),                  5, 5)
+     shape(-1, output_channels[3], 2, 16),                  3, 3)
+     shape(-1, output_channels[4], 1, 8)]                   1, 1)
+    """
+    def __init__(self,
+            output_channels: List[int],
+            image_channels: int,
+            output_feature_sizes: List[Tuple[int]]):
         
+        super().__init__()
         self.out_channels = output_channels
         self.output_feature_shape = output_feature_sizes
         self.backbone = torchvision.models.resnet34(pretrained=True)
-        
+        self.fpn=torchvision.ops.FeaturePyramidNetwork([64,128,256,512,1024],256)
+        self.out_channels = [256 for i in range(6)]
+
 		# parse backbone
-        self.base_layer0 = nn.Sequential(self.backbone.conv1, self.backbone.bn1, self.backbone.relu, self.backbone.maxpool)
+        self.base_layer0 = nn.Sequential(self.backbone.conv1, self.backbone.bn1, self.backbone.relu,self.backbone.maxpool)
         self.base_layer1 = nn.Sequential(self.backbone.layer1)
         self.base_layer2 = nn.Sequential(self.backbone.layer2)
         self.base_layer3 = nn.Sequential(self.backbone.layer3)
         self.base_layer4 = nn.Sequential(self.backbone.layer4)
-		
-        
+        self.extra_layer= nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
+        self.extra_layer2= nn.Sequential(nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
+
         '''forward'''
     def forward(self, x):
 		# bottom-up
@@ -35,22 +55,21 @@ class FPNResNets(nn.Module):
         c3 = self.base_layer2(c2)
         c4 = self.base_layer3(c3)
         c5 = self.base_layer4(c4)
-		
+        c6= self.extra_layer(c5)
+        c7= self.extra_layer2(c6)
+        
         from collections import OrderedDict
         d = OrderedDict()
-        d['feat0'] = c1
-        d['feat1'] = c2
-        d['feat2'] = c3
-        d['feat3'] = c4
-        d['feat4'] = c5
-
-        m=torchvision.ops.FeaturePyramidNetwork([64,64,128,256,512],256)
-        output= m(d)
+        d['feat0'] = c2
+        d['feat1'] = c3
+        d['feat2'] = c4
+        d['feat3'] = c5
+        d['feat4'] = c6
+        d['feat5'] = c7
         
-        for k, v in out.items():
-            out_features.append(v)
-        self.out_channels = [256 for i in range(5)]
-      
+        
+        out_features = list(self.fpn(d).values())
+          
     
         for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
@@ -63,5 +82,6 @@ class FPNResNets(nn.Module):
 
 
         return tuple(out_features)   
+
 
 

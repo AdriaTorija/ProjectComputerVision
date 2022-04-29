@@ -234,14 +234,14 @@ class RandomAdjustSharpness(torch.nn.Module):
 class GaussianBlur(torch.nn.Module):
     def __init__(
         self,
-        k = (3,3)
+        k = 3
     ) -> None:
         super().__init__()
         self.k = k
     @torch.no_grad()
     def forward(self, batch):
         transform = torchvision.transforms.GaussianBlur(
-            k=self.k, 
+            kernel_size = self.k, 
         )
         batch["image"] = transform(batch["image"])
         return batch

@@ -1,9 +1,6 @@
 from torch import nn
-import torchvision
-import torch.nn.functional as F
 from typing import Tuple, List
 import numpy as np
-import torch
 
 
 class BasicModel(nn.Module):
@@ -35,43 +32,103 @@ img_size   128, 1024                                               300,300
         super().__init__()
         self.out_channels = output_channels
         self.output_feature_shape = output_feature_sizes
-        self.backbone = torchvision.models.resnet34(pretrained=True)
-        self.fpn=torchvision.ops.FeaturePyramidNetwork([64,128,256,512,1024],256)
-        self.out_channels = [256 for i in range(6)]
+        
+        #Define the backbone
+        self.feature_extractor = nn.Sequential(#sol
+            nn.Conv2d(image_channels, 32, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(32),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(64),#sol
+            nn.LeakyReLU(0.2),#sol
+            #sol
+            nn.MaxPool2d(2,2), # 64x512 out#sol
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(128),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(128),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(256),#sol
+            nn.LeakyReLU(0.2),#sol
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),#sol
+            nn.BatchNorm2d(512),#sol
+            nn.LeakyReLU(0.2),#sol
+            #Ouput 32#
+            nn.Conv2d(512, output_channels[0], kernel_size=3, padding=1,stride=2),#so    
+        ) #sol
+        
+        self.additional_layers = nn.ModuleList([#sol
+            nn.Sequential( # 16 x 128 out#sol
+                nn.BatchNorm2d(output_channels[0]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[0], 512, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(512),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(512, output_channels[1], kernel_size=3, padding=1, stride=2),#sol
+            ),#sol
+            nn.Sequential( # 8x64 out#sol
+                nn.BatchNorm2d(output_channels[1]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[1], 256, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(256),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(256, output_channels[2], kernel_size=3, padding=1, stride=2),#sol
+            ),#sol
+            nn.Sequential( # 4 x 32 out#sol
+                nn.BatchNorm2d(output_channels[2]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[2], 128, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(128),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(128, output_channels[3], kernel_size=3, padding=1, stride=2),#sol
+            ),#sol
+            nn.Sequential( # 2 x 16 out#sol
+                nn.BatchNorm2d(output_channels[3]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[3], 128, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(128),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(128, output_channels[4], kernel_size=3, stride=2, padding=1),#sol
+            ),#sol
+            nn.Sequential( # 1 x 8 out#sol
+                nn.BatchNorm2d(output_channels[4]),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(output_channels[4], 128, kernel_size=2, padding=1),#sol
+                nn.BatchNorm2d(128),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(128, output_channels[5], kernel_size=2,stride=2),#sol
+            ),#sol
+            
+        ])#sol
 
-		# parse backbone
-        self.base_layer0 = nn.Sequential(self.backbone.conv1, self.backbone.bn1, self.backbone.relu,self.backbone.maxpool)
-        self.base_layer1 = nn.Sequential(self.backbone.layer1)
-        self.base_layer2 = nn.Sequential(self.backbone.layer2)
-        self.base_layer3 = nn.Sequential(self.backbone.layer3)
-        self.base_layer4 = nn.Sequential(self.backbone.layer4)
-        self.extra_layer= nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
-        self.extra_layer2= nn.Sequential(nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
 
-        '''forward'''
     def forward(self, x):
-		# bottom-up
-        c1 = self.base_layer0(x)
-        c2 = self.base_layer1(c1)
-        c3 = self.base_layer2(c2)
-        c4 = self.base_layer3(c3)
-        c5 = self.base_layer4(c4)
-        c6= self.extra_layer(c5)
-        c7= self.extra_layer2(c6)
+        """
+        The forward functiom should output features with shape:
+            [shape(-1, output_channels[0], 38, 38),
+            shape(-1, output_channels[1], 19, 19),
+            shape(-1, output_channels[2], 10, 10),
+            shape(-1, output_channels[3], 5, 5),
+            shape(-1, output_channels[3], 3, 3),
+            shape(-1, output_channels[4], 1, 1)]
+        We have added assertion tests to check this, iteration through out_features,
+        where out_features[0] should have the shape:
+            shape(-1, output_channels[0], 38, 38),
+        """
+        out_features = []
+        x = self.feature_extractor(x)#sol
+        out_features.append(x)#sol
         
-        from collections import OrderedDict
-        d = OrderedDict()
-        d['feat0'] = c2
-        d['feat1'] = c3
-        d['feat2'] = c4
-        d['feat3'] = c5
-        d['feat4'] = c6
-        d['feat5'] = c7
+        for additional_layer in self.additional_layers.children():#sol
+            x = additional_layer(x)#sol
+            out_features.append(x)#sol
         
-        
-        out_features = list(self.fpn(d).values())
-          
-    
+        for out in out_features:
+            print(np.shape(out))
+            
+            
         for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
             h, w = self.output_feature_shape[idx]
@@ -80,9 +137,5 @@ img_size   128, 1024                                               300,300
                 f"Expected shape: {expected_shape}, got: {feature.shape[1:]} at output IDX: {idx}"
         assert len(out_features) == len(self.output_feature_shape),\
             f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features)}"
-
-
-        return tuple(out_features)   
-
-
+        return tuple(out_features)
 
