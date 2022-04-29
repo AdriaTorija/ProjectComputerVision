@@ -2,43 +2,37 @@ import torch.nn as nn
 import torch
 import math
 import torch.nn.functional as F
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def focal_loss(p, y, gamma):
     """
     Args:
-        p (batch_size, num_anchors): the loss for each example.
-        y (batch_size, num_anchors): the labels.
-        gamma:  scalar.
+        p: [32, 9, 65440]
+        y = [32, 65440]
     """
-    neg = 1 - p
-    term1 = torch.pow(neg,gamma)
-    term2 = y
-    term3 = torch.log(p)
+    n_classes = p.size(1)
+    y = F.one_hot(y.long(),num_classes=n_classes)
+    y = y.transpose(1, 2).contiguous()
+
+    alpha = torch.ones([n_classes]) * 1000.0
+    alpha[0] = 10
+    # alpha.size() = 9
+
+    p = F.softmax(p,dim=1)
+    #p: [32, 9, 65440]
+
+    term1 = torch.pow(1 - p,gamma)
+    #term1: [32, 9, 65440]
+
+    term2 = torch.log(p)
+    #term2: [32, 9, 65440]
+
+    term3 = term1 * y * term2
     
-    return -term1 * term2 * term3
-
-def hard_negative_mining(loss, labels, neg_pos_ratio):
-    """
-    It used to suppress the presence of a large number of negative prediction.
-    It works on image level not batch level.
-    For any example/image, it keeps all the positive predictions and
-     cut the number of negative predictions to make sure the ratio
-     between the negative examples and positive examples is no more
-     the given ratio for an image.
-    Args:
-        loss (N, num_priors): the loss for each example.
-        labels (N, num_priors): the labels.
-        neg_pos_ratio:  the ratio between the negative examples and positive examples.
-    """
-    pos_mask = labels > 0
-    num_pos = pos_mask.long().sum(dim=1, keepdim=True)
-    num_neg = num_pos * neg_pos_ratio
-
-    loss[pos_mask] = -math.inf
-    _, indexes = loss.sort(dim=1, descending=True)
-    _, orders = indexes.sort(dim=1)
-    neg_mask = orders < num_neg
-    return pos_mask | neg_mask
+    
+    term3 = torch.einsum('a,bcd->bad', -alpha.to(device), term3.to(device))
+    #term3: [32, 9, 65440]
+    return term3
 
 class SSDMultiboxLoss(nn.Module):
     """
@@ -51,7 +45,6 @@ class SSDMultiboxLoss(nn.Module):
         super().__init__()
         self.scale_xy = 1.0/anchors.scale_xy
         self.scale_wh = 1.0/anchors.scale_wh
-        self.gamma = 5
 
         self.sl1_loss = nn.SmoothL1Loss(reduction='none')
         self.anchors = nn.Parameter(anchors(order="xywh").transpose(0, 1).unsqueeze(dim = 0),
@@ -82,17 +75,12 @@ class SSDMultiboxLoss(nn.Module):
             bbox_delta: [32, 4, 65440]
             confs: [32, 9, 65440]
             gt_bbox: [32, 65440, 4]
-            gt_label = [32, 65440]
+            gt_labels = [32, 65440]
         """
+
         gt_bbox = gt_bbox.transpose(1, 2).contiguous() # reshape to [batch_size, 4, num_anchors]
-        fl = []
-        alpha = torch.ones([len(confs[1])])
-        alpha[0] = 0.1
-        for i in range(confs.size(1)):
-            p = - F.log_softmax(confs, dim=1)[:, 0]
-            fl.append(alpha[i] * focal_loss(p, gt_labels, self.gamma))
-        
-        classification_loss = torch.stack(fl, dim=0).sum(dim=0).sum(dim=0).sum(dim=0)
+        classification_loss = focal_loss(confs, gt_labels, gamma=3).sum(dim=1).mean()
+        print(classification_loss)
 
         pos_mask = (gt_labels > 0).unsqueeze(1).repeat(1, 4, 1)
         bbox_delta = bbox_delta[pos_mask]
@@ -100,10 +88,10 @@ class SSDMultiboxLoss(nn.Module):
         gt_locations = gt_locations[pos_mask]
         regression_loss = F.smooth_l1_loss(bbox_delta, gt_locations, reduction="sum")
         num_pos = gt_locations.shape[0]/4
-        total_loss = regression_loss/num_pos + classification_loss/num_pos
+        total_loss = regression_loss/num_pos + classification_loss
         to_log = dict(
             regression_loss=regression_loss/num_pos,
-            classification_loss=classification_loss/num_pos,
+            classification_loss=classification_loss,
             total_loss=total_loss
         )
         return total_loss, to_log
