@@ -11,14 +11,16 @@ def focal_loss(p, y, gamma):
         y = [32, 65440]
     """
     n_classes = p.size(1)
-    y = F.one_hot(y.long(),num_classes=n_classes)
+
+    y = F.one_hot(y.long(),n_classes)
     y = y.transpose(1, 2).contiguous()
+    #y: [32, 9, 65440]
 
     alpha = torch.ones([n_classes]) * 1000.0
     alpha[0] = 10
-    # alpha.size() = 9
-
+    # alpha: [9]
     p = F.softmax(p,dim=1)
+    print(p[0,:,0].sum())
     #p: [32, 9, 65440]
 
     term1 = torch.pow(1 - p,gamma)
@@ -28,8 +30,6 @@ def focal_loss(p, y, gamma):
     #term2: [32, 9, 65440]
 
     term3 = term1 * y * term2
-    
-    
     term3 = torch.einsum('a,bcd->bad', -alpha.to(device), term3.to(device))
     #term3: [32, 9, 65440]
     return term3
