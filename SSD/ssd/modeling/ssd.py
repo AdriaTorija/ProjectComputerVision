@@ -51,13 +51,19 @@ class SSD300(nn.Module):
         self.regression_heads = nn.ModuleList(self.regression_heads)
         self.classification_heads = nn.ModuleList(self.classification_heads)
         self.anchor_encoder = AnchorEncoder(anchors)
+        self.anchors = anchors
         self._init_weights()
 
     def _init_weights(self):
+        
         layers = [*self.regression_heads, *self.classification_heads]
         for layer in layers:
             for param in layer.parameters():
                 if param.dim() > 1: nn.init.xavier_uniform_(param)
+        last_layer = self.classification_heads[-1][-1]
+        nn.init.constant_(last_layer.bias.data, 0)
+        background_class_fill = torch.log(torch.tensor(0.99 * (self.num_classes - 1)/(1 - 0.99)))
+        nn.init.constant_(last_layer.bias.data[:4], background_class_fill)
 
     def regress_boxes(self, features):
         locations = []
