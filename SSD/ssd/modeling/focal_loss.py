@@ -32,6 +32,8 @@ def focal_loss(p, y, gamma):
     
     term3 = torch.einsum('a,bcd->bad', -alpha.to(device), term3.to(device))
     #term3: [32, 9, 65440]
+    
+    
     return term3
 
 class SSDMultiboxLoss(nn.Module):
