@@ -74,7 +74,7 @@ class SSDMultiboxLoss(nn.Module):
         # alpha: [9]
         classification_loss = focal_loss(confs, gt_labels).mean(dim=[0,2]).cpu() * (-alpha).cpu()
         classification_loss = classification_loss.sum(dim=0)
-        print(classification_loss)
+        #print(classification_loss)
 
         pos_mask = (gt_labels > 0).unsqueeze(1).repeat(1, 4, 1)
         bbox_delta = bbox_delta[pos_mask]

@@ -27,7 +27,7 @@ class SSD300(nn.Module):
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
             #Code 2.3.3
               
-            r1=nn.Sequential(
+            '''r1=nn.Sequential(
                 nn.BatchNorm2d(out_ch),
                 nn.LeakyReLU(0.2),
                 nn.Conv2d(out_ch, 512, kernel_size=3, padding=1),#sol
@@ -43,11 +43,11 @@ class SSD300(nn.Module):
                 nn.LeakyReLU(0.2),#sol
                 nn.Conv2d(512, n_boxes * self.num_classes, kernel_size=3, padding=1),#sol
             )
-           
+           '''
             
 
-            #r1=nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1)
-            #r2=nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1)
+            r1=nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1)
+            r2=nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1)
             self.regression_heads.append(r1)
             self.classification_heads.append(r2)
             
