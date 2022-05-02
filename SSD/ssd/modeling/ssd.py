@@ -25,8 +25,31 @@ class SSD300(nn.Module):
         # Initialize output heads that are applied to each feature map from the backbone.
         
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
-            self.regression_heads.append(nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1))
-            self.classification_heads.append(nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1))
+            #Code 2.3.3
+              
+            r1=nn.Sequential(
+                nn.BatchNorm2d(out_ch),
+                nn.LeakyReLU(0.2),
+                nn.Conv2d(out_ch, 512, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(512),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(512, n_boxes * 4, kernel_size=3, padding=1),#sol
+            )
+            r2=nn.Sequential(
+                nn.BatchNorm2d(out_ch),
+                nn.LeakyReLU(0.2),
+                nn.Conv2d(out_ch, 512, kernel_size=3, padding=1),#sol
+                nn.BatchNorm2d(512),#sol
+                nn.LeakyReLU(0.2),#sol
+                nn.Conv2d(512, n_boxes * self.num_classes, kernel_size=3, padding=1),#sol
+            )
+           
+            
+
+            #r1=nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1)
+            #r2=nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1)
+            self.regression_heads.append(r1)
+            self.classification_heads.append(r2)
             
 
         self.regression_heads = nn.ModuleList(self.regression_heads)
@@ -42,15 +65,17 @@ class SSD300(nn.Module):
             for param in layer.parameters():
                 if param.dim() > 1: nn.init.xavier_uniform_(param)
         
+        #Code 2.3.4
+        '''
+        
         if hasattr(self.classification_heads[-1],'bias'):
             last_layer = self.classification_heads[-1]
         elif hasattr(self.classification_heads[-1][-1],'bias'):
             last_layer = self.classification_heads[-1][-1]
-        
         nn.init.constant_(last_layer.bias.data, 0)
         background_class_fill = torch.log(torch.tensor(0.99 * (self.num_classes - 1)/(1 - 0.99)))
         nn.init.constant_(last_layer.bias.data[:len(last_layer.bias.data/self.num_classes)], background_class_fill)
-
+         '''
     def regress_boxes(self, features):
         locations = []
         confidences = []

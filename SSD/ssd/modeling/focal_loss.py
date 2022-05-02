@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch
 import math
 import torch.nn.functional as F
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def focal_loss(p, y, gamma=2):
     """
