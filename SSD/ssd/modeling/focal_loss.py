@@ -4,7 +4,7 @@ import math
 import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def focal_loss(p, y, gamma):
+def focal_loss(p, y, gamma=2):
     """
     Args:
         p: [32, 9, 65440]
@@ -14,13 +14,10 @@ def focal_loss(p, y, gamma):
     y = y.transpose(1, 2).contiguous()
     #y: [32, 9, 65440]
 
-    p = F.softmax(p,dim=1)
-    #p: [32, 9, 65440]
-
-    term1 = torch.pow(1 - p,gamma)
+    term1 = torch.pow(1 - F.softmax(p,dim=1),gamma)
     #term1: [32, 9, 65440]
 
-    term2 = torch.log(p)
+    term2 = F.log_softmax(p,dim=1)
     #term2: [32, 9, 65440]
 
     term3 = term1 * y * term2
@@ -76,8 +73,9 @@ class SSDMultiboxLoss(nn.Module):
         alpha = torch.ones([confs.size(1)]) * 1000.0
         alpha[0] = 10
         # alpha: [9]
-        classification_loss = focal_loss(confs, gt_labels, gamma=2).nanmean(dim=[0,2]).cpu() * (-alpha).cpu()
+        classification_loss = focal_loss(confs, gt_labels).mean(dim=[0,2]).cpu() * (-alpha).cpu()
         classification_loss = classification_loss.sum(dim=0)
+        print(classification_loss)
 
         pos_mask = (gt_labels > 0).unsqueeze(1).repeat(1, 4, 1)
         bbox_delta = bbox_delta[pos_mask]
