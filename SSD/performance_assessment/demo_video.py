@@ -41,6 +41,7 @@ def run_demo(config_path: str, score_threshold: float, video_path: str, output_p
         img = cpu_transform({"image": frame})["image"].unsqueeze(0)
         img = tops.to_cuda(img)
         img = gpu_transform({"image": img})["image"]
+        print(len(model(img, score_threshold=score_threshold)[0]))
         boxes, categories, scores = model(img, score_threshold=score_threshold)[0]
         boxes[:, [0, 2]] *= width
         boxes[:, [1, 3]] *= height
