@@ -23,12 +23,33 @@ from pytorch_grad_cam.utils.image import show_cam_on_image, scale_accross_batch_
 from pytorch_grad_cam.utils.reshape_transforms import fasterrcnn_reshape_transform
 import torch
 
+tags = {0: 'background', 1: 'car', 2: 'truck', 3: 'bus', 4: 'motorcycle', 5: 'bicycle', 6: 'scooter', 7: 'person', 8: 'rider'}
 
+def renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam):
+    """Normalize the CAM to be in the range [0, 1] 
+    inside every bounding boxes, and zero outside of the bounding boxes. """
+    renormalized_cam = np.zeros(grayscale_cam.shape, dtype=np.int)
+    images = []
+    for x1, y1, x2, y2 in boxes:
+        img = renormalized_cam * 0
+        x1=abs(x1)
+        x2=abs(x2)
+        y1=abs(y1)
+        y2=abs(y2)
+
+        img[y1:y2, x1:x2] = scale_cam_image(grayscale_cam[y1:y2, x1:x2].copy())    
+        images.append(img)
+    
+    renormalized_cam = np.max(np.float32(images), axis = 0)
+    renormalized_cam = scale_cam_image(renormalized_cam)
+    eigencam_image_renormalized = show_cam_on_image(image_float_np, renormalized_cam, use_rgb=True)
+    #image_with_bounding_boxes = draw_boxes(eigencam_image_renormalized,boxes, labels, tags)
+    return eigencam_image_renormalized
 
 
 def reshape_transform(x):
   
-    target_size = x['feat4'].size()[-2 : ]
+    target_size = x['feat5'].size()[-2 : ]
     activations = []
     for key in x:
         value=x[key]
@@ -98,15 +119,17 @@ def run_demo(config_path: str, score_threshold: float, video_path: str, output_p
         grayscale_cam = grayscale_cam[0, :]
         cam_image = show_cam_on_image(image_float_np, grayscale_cam, use_rgb=True)
         
-        tags = {0: 'background', 1: 'car', 2: 'truck', 3: 'bus', 4: 'motorcycle', 5: 'bicycle', 6: 'scooter', 7: 'person', 8: 'rider'}
         boxes=d[0]['boxes']
         scores=d[0]["scores"]
         labels=d[0]['labels']
         boxes[:, [0, 2]] *= width
         boxes[:, [1, 3]] *= height
         boxes, labels, scores = [_.cpu().numpy() for _ in [boxes, labels, scores]]
+        boxes = boxes.astype(int)
+        
+        eng=renormalize_cam_in_bounding_boxes(boxes, image_float_np, grayscale_cam)
         frame = draw_boxes(
-            cam_image, boxes, labels, scores).astype(np.uint8)
+            eng, boxes, labels, scores).astype(np.uint8)
         writer.write(frame[:, :, ::-1])
     print("Video saved to:", pathlib.Path(output_path).absolute())
         
