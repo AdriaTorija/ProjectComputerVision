@@ -5,6 +5,7 @@ from typing import Tuple, List
 import numpy as np
 
 
+
 class FPNResNets(nn.Module):
     """
     This is a basic backbone for SSD.
@@ -39,24 +40,20 @@ img_size   128, 1024                                               300,300
         self.out_channels = [256 for i in range(6)]
 
 		# parse backbone
-        self.base_layer0 = nn.Sequential(self.backbone.conv1, self.backbone.bn1, self.backbone.relu,self.backbone.maxpool)
-        self.base_layer1 = nn.Sequential(self.backbone.layer1)
-        self.base_layer2 = nn.Sequential(self.backbone.layer2)
-        self.base_layer3 = nn.Sequential(self.backbone.layer3)
-        self.base_layer4 = nn.Sequential(self.backbone.layer4)
-        self.extra_layer= nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
-        self.extra_layer2= nn.Sequential(nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
+        self.backbone.layer0 = nn.Sequential(self.backbone.conv1, self.backbone.bn1, self.backbone.relu,self.backbone.maxpool)
+        self.backbone.layer5= nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
+        self.backbone.layer6= nn.Sequential(nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
 
         '''forward'''
     def forward(self, x):
 		# bottom-up
-        c1 = self.base_layer0(x)
-        c2 = self.base_layer1(c1)
-        c3 = self.base_layer2(c2)
-        c4 = self.base_layer3(c3)
-        c5 = self.base_layer4(c4)
-        c6= self.extra_layer(c5)
-        c7= self.extra_layer2(c6)
+        c1 = self.backbone.layer0(x)
+        c2 = self.backbone.layer1(c1)
+        c3 = self.backbone.layer2(c2)
+        c4 = self.backbone.layer3(c3)
+        c5 = self.backbone.layer4(c4)
+        c6= self.backbone.layer5(c5)
+        c7= self.backbone.layer6(c6)
         
         from collections import OrderedDict
         d = OrderedDict()
@@ -67,10 +64,8 @@ img_size   128, 1024                                               300,300
         d['feat4'] = c6
         d['feat5'] = c7
         
-        
         out_features = list(self.fpn(d).values())
-          
-    
+
         for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
             h, w = self.output_feature_shape[idx]
@@ -79,9 +74,4 @@ img_size   128, 1024                                               300,300
                 f"Expected shape: {expected_shape}, got: {feature.shape[1:]} at output IDX: {idx}"
         assert len(out_features) == len(self.output_feature_shape),\
             f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features)}"
-
-
         return tuple(out_features)   
-
-
-
