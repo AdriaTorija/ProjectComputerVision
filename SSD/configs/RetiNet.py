@@ -24,7 +24,9 @@ anchors = L(AnchorBoxes)(
     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
     # Strides is the number of pixels (in image space) between each spatial position in the feature map
     strides=[[4, 4], [8, 8], [16, 16], [32, 32], [64, 64], [128, 128]],
-    min_sizes=[[16, 16], [32, 32], [48, 48], [64, 64], [86, 86], [128, 128], [128, 400]],
+    min_sizes=[[16, 16], [24, 24], [32, 32], [48, 48], [64, 64], [86, 86], [128, 128]],
+    #[[4, 4], [8, 8], [16, 16], [48, 48], [64, 64], [86, 86], [128, 128]],
+    #[[3, 3], [9, 9], [18, 18], [20, 20], [77, 77], [128,190], [128, 400]], 0.04254
     # aspect ratio is defined per feature map (first index is largest feature map (38x38))
     # aspect ratio is used to define two boxes per element in the list.
     # if ratio=[2], boxes will be created with ratio 1:2 and 2:1

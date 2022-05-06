@@ -42,8 +42,8 @@ class SSD300(nn.Module):
                 nn.BatchNorm2d(512),#sol
                 nn.LeakyReLU(0.2),#sol
                 nn.Conv2d(512, n_boxes * self.num_classes, kernel_size=3, padding=1),#sol
-            )
-           '''
+            )'''
+           
             
 
             r1=nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1)
@@ -66,8 +66,6 @@ class SSD300(nn.Module):
                 if param.dim() > 1: nn.init.xavier_uniform_(param)
         
         #Code 2.3.4
-        '''
-        
         if hasattr(self.classification_heads[-1],'bias'):
             last_layer = self.classification_heads[-1]
         elif hasattr(self.classification_heads[-1][-1],'bias'):
@@ -75,7 +73,7 @@ class SSD300(nn.Module):
         nn.init.constant_(last_layer.bias.data, 0)
         background_class_fill = torch.log(torch.tensor(0.99 * (self.num_classes - 1)/(1 - 0.99)))
         nn.init.constant_(last_layer.bias.data[:len(last_layer.bias.data/self.num_classes)], background_class_fill)
-         '''
+         
     def regress_boxes(self, features):
         locations = []
         confidences = []
