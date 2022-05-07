@@ -45,7 +45,7 @@ img_size   128, 1024                                               300,300
 		# parse backbone
         self.backbone.layer0 = nn.Sequential(self.backbone.conv1, self.backbone.bn1, self.backbone.relu,self.backbone.maxpool)
         self.backbone.layer5= nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
-        self.backbone.layer6= nn.Sequential(nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
+        self.backbone.layer6= nn.Sequential(nn.Conv2d(1024, 256, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(256), self.backbone.relu)
 
         '''forward'''
     def forward(self, x):
