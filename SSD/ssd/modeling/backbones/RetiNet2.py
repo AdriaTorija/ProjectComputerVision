@@ -6,7 +6,7 @@ import numpy as np
 
 
 
-class FPNResNets(nn.Module):
+class FPNResNets2(nn.Module):
     """
     This is a basic backbone for SSD.
     The feature extractor outputs a list of 6 feature maps, with the sizes:
@@ -35,17 +35,14 @@ img_size   128, 1024                                               300,300
         super().__init__()
         self.out_channels = output_channels
         self.output_feature_shape = output_feature_sizes
-        self.backbone = torchvision.models.resnet34(pretrained=True)
-        self.backbone2 = torchvision.models.resnet101(pretrained=True)
+        self.backbone = torchvision.models.resnet101(pretrained=True)
         self.fpn=torchvision.ops.FeaturePyramidNetwork([64,128,256,512,1024],256)
         self.out_channels = [256 for i in range(6)]
 
-        print(self.backbone)
-        print(self.backbone2)
 		# parse backbone
         self.backbone.layer0 = nn.Sequential(self.backbone.conv1, self.backbone.bn1, self.backbone.relu,self.backbone.maxpool)
-        self.backbone.layer5= nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
-        self.backbone.layer6= nn.Sequential(nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
+        self.backbone.layer5= nn.Sequential(nn.Conv2d(2048, 1024, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(1024), self.backbone.relu)
+        self.backbone.layer6= nn.Sequential(nn.Conv2d(1024, 256, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(256), self.backbone.relu)
 
         '''forward'''
     def forward(self, x):
@@ -55,8 +52,11 @@ img_size   128, 1024                                               300,300
         c3 = self.backbone.layer2(c2)
         c4 = self.backbone.layer3(c3)
         c5 = self.backbone.layer4(c4)
+        print(np.shape(c5))
         c6= self.backbone.layer5(c5)
+        print(np.shape(c6))
         c7= self.backbone.layer6(c6)
+        print(np.shape(c7))
         
         from collections import OrderedDict
         d = OrderedDict()

@@ -23,7 +23,7 @@ def focal_loss(p, y, gamma=2):
     #term3: [32, 9, 65440]
     return term3
 
-class SSDMultiboxLoss(nn.Module):
+class SSDMultiboxLoss2(nn.Module):
     """
         Implements the loss as the sum of the followings:
         1. Confidence Loss: All labels, with hard negative mining

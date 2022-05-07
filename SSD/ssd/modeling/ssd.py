@@ -25,7 +25,11 @@ class SSD300(nn.Module):
         # Initialize output heads that are applied to each feature map from the backbone.
        
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
-            #Code 2.3.3
+            
+            r1=nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1)
+            r2=nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1)
+
+            #Code 2.3.3 Uncoment this code for deeper convolutional net heads
             '''
             r1=nn.Sequential(
                 nn.Conv2d(out_ch, 128, kernel_size=3, padding=1),#sol
@@ -40,9 +44,6 @@ class SSD300(nn.Module):
                 nn.Conv2d(128, n_boxes * self.num_classes, kernel_size=3, padding=1),#sol
             )'''
            
-            
-            r1=nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1)
-            r2=nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1)
             self.regression_heads.append(r1)
             self.classification_heads.append(r2)
             
@@ -60,7 +61,8 @@ class SSD300(nn.Module):
             for param in layer.parameters():
                 if param.dim() > 1: nn.init.xavier_uniform_(param)
         
-        #Code 2.3.4
+        #Code 2.3.4 Uncoment this code for weight initialization
+
         if hasattr(self.classification_heads[-1],'bias'):
             last_layer = self.classification_heads[-1]
         elif hasattr(self.classification_heads[-1][-1],'bias'):
